@@ -1,0 +1,28 @@
+.navbar {
+  display: flex;
+  gap: 1rem;
+  background: #fff;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 2rem;
+  border-radius: 0 0 12px 12px;
+  animation: fadeIn 0.7s ease;
+}
+.navbar button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: #333;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.navbar button.active, .navbar button:hover {
+  background: #0070f3;
+  color: #fff;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
