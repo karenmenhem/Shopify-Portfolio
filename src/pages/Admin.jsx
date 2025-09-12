@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import dataService from '../services/dataService';
 import '../assets/styles/home.css';
 
 // Project Modal Component for Admin
@@ -114,6 +115,7 @@ export default function Admin({ isAdmin, setIsAdmin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -125,20 +127,23 @@ export default function Admin({ isAdmin, setIsAdmin }) {
     }
   }, [isAdmin]);
 
-  const loadProjects = () => {
+  const loadProjects = async () => {
+    setLoading(true);
     try {
-      const savedProjects = localStorage.getItem('shopifyProjects');
-      setProjects(savedProjects ? JSON.parse(savedProjects) : []);
+      const list = await dataService.getProjects();
+      setProjects(Array.isArray(list) ? list : []);
     } catch (error) {
       console.error('Error loading projects:', error);
       setProjects([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const saveProjects = (newProjects) => {
+  const saveProjects = async (newProjects) => {
     try {
-      localStorage.setItem('shopifyProjects', JSON.stringify(newProjects));
       setProjects(newProjects);
+      await dataService.saveAll(newProjects);
     } catch (error) {
       console.error('Error saving projects:', error);
       alert('Error saving projects. Please try again.');
@@ -157,16 +162,19 @@ export default function Admin({ isAdmin, setIsAdmin }) {
     }
   };
 
+  const genId = () => (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2,8)}`);
+
   const handleSaveProject = (projectData) => {
     if (editingProject) {
-      // Edit existing project
-      const updatedProjects = projects.map(p => 
-        p === editingProject ? projectData : p
+      // Edit existing project by id
+      const updated = projects.map(p =>
+        p.id === editingProject.id ? { ...p, ...projectData, id: editingProject.id } : p
       );
-      saveProjects(updatedProjects);
+      saveProjects(updated);
     } else {
-      // Add new project
-      saveProjects([...projects, projectData]);
+      // Add new project with generated id
+      const withId = { id: genId(), ...projectData };
+      saveProjects([...projects, withId]);
     }
     setShowModal(false);
     setEditingProject(null);
@@ -179,7 +187,7 @@ export default function Admin({ isAdmin, setIsAdmin }) {
 
   const handleDeleteProject = (project) => {
     if (confirm('Delete this project?')) {
-      const updatedProjects = projects.filter(p => p !== project);
+      const updatedProjects = projects.filter(p => p.id !== project.id);
       saveProjects(updatedProjects);
     }
   };
@@ -283,14 +291,19 @@ export default function Admin({ isAdmin, setIsAdmin }) {
         </div>
         
         <div className="projects-list">
-          {projects.length === 0 && (
+          {loading && (
+            <div style={{color:'#888', textAlign: 'center', padding: '3rem'}}>
+              Loading projects...
+            </div>
+          )}
+          {!loading && projects.length === 0 && (
             <div style={{color:'#888', textAlign: 'center', padding: '3rem'}}>
               No projects yet. Click "Add New Project" to get started.
             </div>
           )}
-          {projects.map((project, idx) => (
+          {!loading && projects.map((project, idx) => (
             <div
-              key={idx}
+              key={project.id || idx}
               draggable
               onDragStart={(e) => handleDragStart(e, idx)}
               onDragOver={handleDragOver}
@@ -351,12 +364,12 @@ export default function Admin({ isAdmin, setIsAdmin }) {
                 </div>
 
                 <div className="project-actions">
-                  <button className="edit-btn" onClick={() => handleEditProject(project)}>Edit</button>
-                  <button className="delete-btn" onClick={() => handleDeleteProject(project)}>Delete</button>
+      <button className="edit-btn" onClick={() => handleEditProject(project)}>Edit</button>
+      <button className="delete-btn" onClick={() => handleDeleteProject(project)}>Delete</button>
                 </div>
               </div>
             </div>
-          ))}
+    ))}
         </div>
         
         {showModal && (

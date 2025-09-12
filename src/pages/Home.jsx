@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
 import ProjectCard from '../components/ProjectCard';
+import dataService from '../services/dataService';
 import '../assets/styles/home.css';
 
 export default function Home() {
   const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load projects from localStorage on component mount
+  // Load projects from data service on mount
   useEffect(() => {
-    try {
-      const savedProjects = localStorage.getItem('shopifyProjects');
-      setProjects(savedProjects ? JSON.parse(savedProjects) : []);
-    } catch (error) {
-      console.error('Error loading projects from localStorage:', error);
-      setProjects([]);
-    }
+    (async () => {
+      try {
+        const list = await dataService.getProjects();
+        setProjects(list);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   return (
@@ -29,18 +32,19 @@ export default function Home() {
           </div>
         </div>
         <div className="projects-list">
-          {projects.length === 0 && (
+          {loading && (
+            <div style={{color:'#888', textAlign: 'center', padding: '3rem'}}>
+              Loading projects...
+            </div>
+          )}
+          {!loading && projects.length === 0 && (
             <div style={{color:'#888', textAlign: 'center', padding: '3rem'}}>
               No projects to display yet.
             </div>
           )}
-          {projects.map((project, idx) => (
-            <div key={idx} style={{ position: 'relative' }}>
-              <ProjectCard 
-                {...project}
-                // No edit/delete functionality for visitors
-                showActions={false}
-              />
+          {!loading && projects.map((project, idx) => (
+            <div key={project.id || idx} style={{ position: 'relative' }}>
+              <ProjectCard {...project} showActions={false} />
             </div>
           ))}
         </div>

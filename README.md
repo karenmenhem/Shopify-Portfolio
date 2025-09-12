@@ -1,14 +1,48 @@
-# React + Vite
+# Shopify-Portfolio (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is a Shopify portfolio with an Admin panel. Admins can add/edit/delete/reorder projects. The public Home page is read-only. Data is stored in Supabase when configured, with localStorage as a fallback during development.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1) Install deps and run dev
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+2) Admin login
+- Set `VITE_ADMIN_PASSWORD` in a `.env` file (or use default `admin123` for local only).
+- Open the Admin page and log in.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-# Shopify-Portfolio
-# Shopify-Portfolio
+## Supabase (global persistence)
+
+To make Admin changes visible to everyone on deployment, configure Supabase:
+
+1) Create a project and a table `projects` with columns:
+- `id` text PRIMARY KEY
+- `title` text
+- `desc` text
+- `desktop_img` text
+- `mobile_img` text
+- `link` text
+- `order_index` int4
+- `created_at` timestamptz default now()
+
+2) RLS
+- Enable Row Level Security on `projects`.
+- For quick demos, add permissive policies allowing anon select/insert/update/delete. For production, restrict writes (e.g., via edge functions or auth) so only admins can modify.
+
+3) Env vars
+Set these in `.env` locally and in Vercel Project Settings → Environment Variables:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_ADMIN_PASSWORD`
+
+## Deploy on Vercel
+- Import this repo in Vercel.
+- Add the env vars above.
+- Deploy. The Home page reads from Supabase; the Admin page writes via the shared data service.
+
+## Notes
+- Images are compressed client-side for quality and size balance.
+- Drag-and-drop in Admin updates the `order_index` field so ordering persists.
